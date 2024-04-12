@@ -1,5 +1,7 @@
 Let’s start by setting up the project for your Android app, "Healthy Shopper". 
 
+What our output will look like: https://app.screencast.com/uJRjmt6P9NBPH
+
 This setup will include creating a new Android project, adding necessary dependencies, defining your data model, and implementing the RecyclerView for CRUD operations with the Room database.
 
 Phase 1: Project Setup and Core Functionality
@@ -13,98 +15,264 @@ Step 1: Create a New Android Project
     Set the language to Kotlin and the minimum API level to your target (API 21 or higher is recommended).
 
 Step 2: Add Dependencies
-Open your build.gradle (Module: app) file and add the following dependencies for Room and RecyclerView:
+*** Open your build.gradle (Module: app) file and add the following dependencies for Room and RecyclerView:
 
-gradle
+/// gradle module level build file
 
-dependencies {
-    def room_version = "2.5.0" // Check for the latest version available
-    implementation "androidx.room:room-runtime:$room_version"
-    kapt "androidx.room:room-compiler:$room_version" // Use kapt for Kotlin
-    implementation "androidx.recyclerview:recyclerview:1.3.0"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.6.0"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.0"
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
 }
 
-apply plugin: 'kotlin-kapt'
+android {
+    // Add the namespace field with your package name
+    namespace = "com.example.healthyshopperroomsandroidappv1"
+    compileSdk = 34
 
-Step 3: Define the Data Model
-Create a Kotlin data class for your GroceryItem entity, DAO interface, and the Database abstract class.
+    defaultConfig {
+        applicationId = "com.example.healthyshopperroomsandroidappv1"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
 
-    GroceryItem Entity:
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
-kotlin
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity(tableName = "grocery_items")
-data class GroceryItem(
-    @PrimaryKey(autoGenerate = true) val itemId: Long = 0,
-    var itemName: String,
-    var quantity: Int
-)
-
-    GroceryItemDao:
-
-kotlin
-
-import androidx.lifecycle.LiveData
-import androidx.room.*
-
-@Dao
-interface GroceryItemDao {
-    @Insert
-    fun insertItem(item: GroceryItem)
-
-    @Update
-    fun updateItem(item: GroceryItem)
-
-    @Delete
-    fun deleteItem(item: GroceryItem)
-
-    @Query("SELECT * FROM grocery_items ORDER BY itemName ASC")
-    fun getAllItems(): LiveData<List<GroceryItem>>
-}
-
-    GroceryDatabase:
-
-kotlin
-
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import android.content.Context
-
-@Database(entities = [GroceryItem::class], version = 1, exportSchema = false)
-abstract class GroceryDatabase : RoomDatabase() {
-    abstract fun groceryItemDao(): GroceryItemDao
-
-    companion object {
-        @Volatile
-        private var INSTANCE: GroceryDatabase? = null
-
-        fun getDatabase(context: Context): GroceryDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    GroceryDatabase::class.java,
-                    "grocery_database"
-                ).build()
-                INSTANCE = instance
-                instance
-            }
+    buildTypes {
+        named("release") {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 }
 
-Step 4: Setup MainActivity and RecyclerView
+dependencies {
+    implementation("androidx.core:core-ktx:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.0")
 
-    MainActivity:
-        Setup ViewBinding.
-        Initialize the RecyclerView.
-        Setup the ViewModel.
+    // Room components
+    val room_version = "2.5.0" // Use the latest version available
+    implementation("androidx.room:room-runtime:$room_version")
+    kapt("androidx.room:room-compiler:$room_version")
 
-Next we will work on the XML layout and the MainActivity setup. 
-This will include how to interact with your RecyclerView and implement CRUD operations effectively.
+    // Testing libraries
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.3")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+}
+
+///  ** end module level build file
+
+### Now you have sync'ed and all is well for the phase 1 start of "Healthy Shopper"
+
+#### To continue building your Healthy Shopper Grocery List app, you should address both the UI (User Interface) and the back end elements. 
+Here's a suggested roadmap to tackle both:
+
+##### UI Design:
+
+    Create XML Layouts:
+        MainActivity Layout: Design the main screen with EditText inputs for the grocery item name, price per unit, and quantity.
+        Button: Add a button to submit the entered data to the Room database.
+        RecyclerView: Set up a RecyclerView to display the list of items. Each item in the RecyclerView can have a TextView for the item name, price, quantity, and category.
+        Drop-down Menu: Add a spinner or drop-down list for selecting the category of the food item.
+        Display Total: Include a view that displays the total cart amount.
+
+    RecyclerView Adapter:
+        Design an adapter for the RecyclerView that binds data from the Room database to the views.
+        Implement the functionality for the edit feature directly within the RecyclerView list items.
+        Add listeners for drag-and-drop and swipe-to-delete actions.
+
+///////////////////
+
+To achieve the UI design for the Healthy Shopper app, let's start by creating the activity_main.xml. 
+This layout will include the input fields for adding new grocery items, a button to add the items to the Room database, and a RecyclerView that will display the list of items with 
+functionalities like drag-and-drop, swipe to delete, and in-line editing.
+
+Here's a breakdown of what we'll do:
+
+    Define an EditText for the grocery item name.
+    Define a NumberDecimal EditText for the price per unit.
+    Define a Number EditText for the quantity.
+    Include a Spinner or AutoCompleteTextView for selecting the item's category.
+    Place an Add button to submit the new item to the database.
+    Set up a RecyclerView to display the list of grocery items.
+    Create a TextView to show the total cart amount.
+
+#### Below is the initial layout for activity_main.xml:
+
+We will address the UI design and make the activity_main.xml with a text to enter a new grocery item, a button to transact that item as a DAO into the approprate collection of the Room Database, and a text display region on the UI screen which accomodates for:
+1. display regions for each DAO in the Database
+2. user can drag the items up and down
+3. user can right swipe to delete
+4. user can edit the text field contents
+programming will be in place so the UI Shopping List listens to changes in the Room database and updates to reflect 
+GPT
+
+To achieve the UI design for the Healthy Shopper app, let's start by creating the activity_main.xml. This layout will include the input fields for adding new grocery items, a button to add the items to the Room database, and a RecyclerView that will display the list of items with functionalities like drag-and-drop, swipe to delete, and in-line editing.
+
+Here's a breakdown of what we'll do:
+
+    Define an EditText for the grocery item name.
+    Define a NumberDecimal EditText for the price per unit.
+    Define a Number EditText for the quantity.
+    Include a Spinner or AutoCompleteTextView for selecting the item's category.
+    Place an Add button to submit the new item to the database.
+    Set up a RecyclerView to display the list of grocery items.
+    Create a TextView to show the total cart amount.
+
+strings.xml
+<resources>
+    <string name="app_name">Healthy Shopper Rooms Android App v1</string>
+    <string name="hint_enter_grocery_item_name">Enter Grocery Item Name</string>
+    <string name="hint_price_per_unit">Price per Unit</string>
+    <string name="hint_quantity_to_purchase">Quantity to Purchase</string>
+    <string name="action_add_item">Add Item</string>
+    <string name="total_cart_amount">Total Cart Amount: $0.00</string>
+</resources>
+
+
+Below is the initial layout for activity_main.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- Input Fields -->
+    <EditText
+        android:id="@+id/editTextItemName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Grocery Item Name"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/editTextPrice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Price per Unit"
+        android:inputType="numberDecimal"
+        android:layout_below="@id/editTextItemName" />
+
+    <EditText
+        android:id="@+id/editTextQuantity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Quantity to Purchase"
+        android:inputType="number"
+        android:layout_below="@id/editTextPrice" />
+
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/editTextQuantity" />
+
+    <!-- Add Button -->
+    <Button
+        android:id="@+id/buttonAddItem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Item"
+        android:layout_below="@id/spinnerCategory" />
+
+    <!-- Total Cart Amount -->
+    <TextView
+        android:id="@+id/textViewTotalAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total Cart Amount: $0.00"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+    <!-- RecyclerView for Shopping List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewShoppingList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/textViewTotalAmount"
+        android:layout_below="@id/buttonAddItem" />
+
+</RelativeLayout>
+
+In the above layout, RecyclerView takes up the majority of the screen and sits between the Add button and the Total Cart Amount display. 
+The EditText fields and Spinner are stacked at the top of the layout.
+
+Next steps will be:
+
+    Populate the spinner with categories.
+    Implement the RecyclerView.Adapter and ViewHolder to handle displaying each item.
+    Add touch helpers to RecyclerView for drag-and-drop and swipe-to-delete functionalities.
+    Create a layout file for the individual items in the RecyclerView.
+    Ensure the RecyclerView updates when the underlying data changes by observing a ViewModel.
+
+The backend logic will involve setting up the Room database with the necessary entities, DAO, and a repository pattern to abstract the data operations.
+
+####  End Listing activity_main.xml
+
+In the above layout, RecyclerView takes up the majority of the screen and sits between the Add button and the Total Cart Amount display. 
+The EditText fields and Spinner are stacked at the top of the layout.
+
+Next steps will be:
+
+    Populate the spinner with categories.
+    Implement the RecyclerView.Adapter and ViewHolder to handle displaying each item.
+    Add touch helpers to RecyclerView for drag-and-drop and swipe-to-delete functionalities.
+    Create a layout file for the individual items in the RecyclerView.
+    Ensure the RecyclerView updates when the underlying data changes by observing a ViewModel.
+
+The backend logic will involve setting up the Room database with the necessary entities, DAO, and a repository pattern to abstract the data operations.
+
+///////////////////
+
+##### Back End Setup:
+
+    Room Database:
+        Entity Classes: Define GroceryItem and Category as entities.
+        DAO Interfaces: Create GroceryItemDao for grocery item operations and CategoryDao for category operations.
+        Database Class: Set up the database class that builds the Room database instance and provides DAOs.
+
+    Repository:
+        Implement a repository class that mediates between the data source (DAOs) and the ViewModel.
+
+    ViewModel:
+        Create a ViewModel that holds and processes all the data needed for the UI.
+        Expose LiveData or Flow that the UI can observe for changes to update the total cart amount and the list of items.
+
+    Data Binding and Event Handling:
+        Set up data binding for the UI elements.
+        Implement click listeners for the add item button.
+        Implement the logic to handle the addition, update, and deletion of items.
+
+    Business Logic:
+        Include input validation (e.g., non-empty fields, valid numbers).
+        Implement calculations for the total cart amount.
+
+    LiveData Observers:
+        Establish observers for LiveData in MainActivity to react to data changes.
+
+    Testing:
+        Write unit tests for your ViewModel, DAOs, and Repository to ensure they are functioning correctly.
+
+By following this roadmap, you can systematically develop the Healthy Shopper Grocery List app with a focus on both the front-end user interface and the underlying back-end architecture.
 
